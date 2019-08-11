@@ -1,0 +1,12 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<appSettings>
+  <configuration>
+    <DNSServer>172.29.11.2</DNSServer>
+    <ADServer>172.29.11.2</ADServer>
+    <ADDomain>kr-olomoucky.int</ADDomain>
+    <ADSearch>OU=PC and NB W10,DC=kr-olomoucky,DC=int</ADSearch>
+    <ADsso>true</ADsso>
+    <ADUser>aa</ADUser>
+    <ADPassword>aa</ADPassword>
+  </configuration>
+</appSettings>

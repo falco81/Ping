@@ -16,7 +16,8 @@ using System.IO;
 using System.Data.OleDb;
 using Excel = Microsoft.Office.Interop.Excel;
 using System.Data.SqlClient;
-
+using DnsClient;
+using System.Security.Cryptography;
 
 namespace Pinger
 {
@@ -26,8 +27,9 @@ namespace Pinger
     {
 
         private string Excel03ConString = "Provider=Microsoft.Jet.OLEDB.4.0;Data Source={0};Extended Properties='Excel 8.0;HDR={1}'";
-        private string Excel07ConString = "Provider=Microsoft.ACE.OLEDB.12.0;Data Source={0};Extended Properties='Excel 8.0;HDR={1}'";
-
+        private string Excel07ConString = "Provider=Microsoft.ACE.OLEDB.12.0;Data Source={0};Extended Properties='Excel 12.0;HDR={1}'";
+        public static string configPassword = "muGcqhykTkOHM2pD7UXaBWXU";
+        private static byte[] _salt = Encoding.ASCII.GetBytes("0123456789abcdef");
 
         public void ClearGrid()
         {
@@ -51,21 +53,46 @@ namespace Pinger
             doc.Load("Config.xml");
             string ADServer = doc.SelectSingleNode("/appSettings/configuration/ADServer").InnerText;
             string ADSearch = doc.SelectSingleNode("/appSettings/configuration/ADSearch").InnerText;
-            DirectoryEntry entry = new DirectoryEntry("LDAP://" + ADServer + "/" + ADSearch);
-            DirectorySearcher mySearcher = new DirectorySearcher(entry);
-            mySearcher.Filter = ("(objectClass=organizationalUnit)");
-            mySearcher.SizeLimit = int.MaxValue;
-            mySearcher.PageSize = int.MaxValue;
-
-            foreach (SearchResult resEnt in mySearcher.FindAll())
+            string ADUser = doc.SelectSingleNode("/appSettings/configuration/ADUser").InnerText;
+            //string ADPassword = doc.SelectSingleNode("/appSettings/configuration/ADPassword").InnerText;
+            string ADPassword = DecryptString(doc.SelectSingleNode("/appSettings/configuration/ADPassword").InnerText, configPassword);
+            bool ADSsso = Convert.ToBoolean(doc.SelectSingleNode("/appSettings/configuration/ADsso").InnerText);
+            if (ADSsso)
             {
-                string OUName = resEnt.GetDirectoryEntry().Name;
-                comboBox1.Items.Add(OUName.Remove(0, 3));
-            }
+                DirectoryEntry entry = new DirectoryEntry("LDAP://" + ADServer + "/" + ADSearch);
+                DirectorySearcher mySearcher = new DirectorySearcher(entry);
+                mySearcher.Filter = ("(objectClass=organizationalUnit)");
+                mySearcher.SizeLimit = int.MaxValue;
+                mySearcher.PageSize = int.MaxValue;
 
-            mySearcher.Dispose();
-            entry.Dispose();
-            comboBox1.SelectedIndex = 0;
+                foreach (SearchResult resEnt in mySearcher.FindAll())
+                {
+                    string OUName = resEnt.GetDirectoryEntry().Name;
+                    comboBox1.Items.Add(OUName.Remove(0, 3));
+                }
+
+                mySearcher.Dispose();
+                entry.Dispose();
+                comboBox1.SelectedIndex = 0;
+            }
+            else
+            {
+                DirectoryEntry entry = new DirectoryEntry("LDAP://" + ADServer + "/" + ADSearch, ADUser, ADPassword);
+                DirectorySearcher mySearcher = new DirectorySearcher(entry);
+                mySearcher.Filter = ("(objectClass=organizationalUnit)");
+                mySearcher.SizeLimit = int.MaxValue;
+                mySearcher.PageSize = int.MaxValue;
+
+                foreach (SearchResult resEnt in mySearcher.FindAll())
+                {
+                    string OUName = resEnt.GetDirectoryEntry().Name;
+                    comboBox1.Items.Add(OUName.Remove(0, 3));
+                }
+
+                mySearcher.Dispose();
+                entry.Dispose();
+                comboBox1.SelectedIndex = 0;
+            }
         }
 
         public void ReadPC()
@@ -75,55 +102,116 @@ namespace Pinger
             doc.Load("Config.xml");
             string ADServer = doc.SelectSingleNode("/appSettings/configuration/ADServer").InnerText;
             string ADSearch = doc.SelectSingleNode("/appSettings/configuration/ADSearch").InnerText;
-            DirectoryEntry entry = new DirectoryEntry("LDAP://" + ADServer + "/OU=" + comboBox1.Text + "," + ADSearch);
-            DirectorySearcher mySearcher = new DirectorySearcher(entry);
-            mySearcher.Filter = ("(objectCategory=Computer)");
-            mySearcher.SizeLimit = int.MaxValue;
-            mySearcher.PageSize = int.MaxValue;
-            int index = 0;
-            dataGridView1.ColumnCount = 3;
-            dataGridView1.ColumnHeadersVisible = true;
-
-
-
-            // Set the column header style.
-            DataGridViewCellStyle columnHeaderStyle = new DataGridViewCellStyle();
-
-            columnHeaderStyle.BackColor = Color.Beige;
-            columnHeaderStyle.Font = new Font("Verdana", 10, FontStyle.Bold);
-            dataGridView1.ColumnHeadersDefaultCellStyle = columnHeaderStyle;
-
-            // Set the column header names.
-            dataGridView1.Columns[0].Name = "Inv. č.";
-            dataGridView1.Columns[1].Name = "IP";
-            dataGridView1.Columns[2].Name = "Ping";
-
-            try
+            string ADUser = doc.SelectSingleNode("/appSettings/configuration/ADUser").InnerText;
+            //string ADPassword = doc.SelectSingleNode("/appSettings/configuration/ADPassword").InnerText;
+            string ADPassword = DecryptString(doc.SelectSingleNode("/appSettings/configuration/ADPassword").InnerText, configPassword);
+            bool ADSsso = Convert.ToBoolean(doc.SelectSingleNode("/appSettings/configuration/ADsso").InnerText);
+            if (ADSsso)
             {
-                SearchResultCollection results = mySearcher.FindAll();
+                DirectoryEntry entry = new DirectoryEntry("LDAP://" + ADServer + "/OU=" + comboBox1.Text + "," + ADSearch);
+                DirectorySearcher mySearcher = new DirectorySearcher(entry);
+                mySearcher.Filter = ("(objectCategory=Computer)");
+                mySearcher.SizeLimit = int.MaxValue;
+                mySearcher.PageSize = int.MaxValue;
+                int index = 0;
+                dataGridView1.ColumnCount = 3;
+                dataGridView1.ColumnHeadersVisible = true;
+
+
+
+                // Set the column header style.
+                DataGridViewCellStyle columnHeaderStyle = new DataGridViewCellStyle();
+
+                columnHeaderStyle.BackColor = Color.Beige;
+                columnHeaderStyle.Font = new Font("Verdana", 10, FontStyle.Bold);
+                dataGridView1.ColumnHeadersDefaultCellStyle = columnHeaderStyle;
+
+                // Set the column header names.
+                dataGridView1.Columns[0].Name = "Inv. č.";
+                dataGridView1.Columns[1].Name = "IP";
+                dataGridView1.Columns[2].Name = "Ping";
+
+                try
                 {
-
-
-
-                    foreach (SearchResult resEnt in mySearcher.FindAll())
+                    SearchResultCollection results = mySearcher.FindAll();
                     {
-                        string PCName = resEnt.GetDirectoryEntry().Name;
 
 
-                        dataGridView1.Rows.Add();
-                        dataGridView1.Rows[index].Cells["Inv. č."].Value = PCName.Remove(0, 3);
-                        index++;
+
+                        foreach (SearchResult resEnt in mySearcher.FindAll())
+                        {
+                            string PCName = resEnt.GetDirectoryEntry().Name;
+
+
+                            dataGridView1.Rows.Add();
+                            dataGridView1.Rows[index].Cells["Inv. č."].Value = PCName.Remove(0, 3);
+                            index++;
+                        }
+
+                        mySearcher.Dispose();
+                        entry.Dispose();
                     }
+                }
+                catch
+                {
+                    dataGridView1.Rows.Add();
+                    dataGridView1.Rows[index].Cells["Inv. č."].Value = "Nenalezeno žádné PC";
+                }
 
-                    mySearcher.Dispose();
-                    entry.Dispose();
+            }
+            else
+            {
+                DirectoryEntry entry = new DirectoryEntry("LDAP://" + ADServer + "/OU=" + comboBox1.Text + "," + ADSearch, ADUser, ADPassword);
+                DirectorySearcher mySearcher = new DirectorySearcher(entry);
+                mySearcher.Filter = ("(objectCategory=Computer)");
+                mySearcher.SizeLimit = int.MaxValue;
+                mySearcher.PageSize = int.MaxValue;
+                int index = 0;
+                dataGridView1.ColumnCount = 3;
+                dataGridView1.ColumnHeadersVisible = true;
+
+
+
+                // Set the column header style.
+                DataGridViewCellStyle columnHeaderStyle = new DataGridViewCellStyle();
+
+                columnHeaderStyle.BackColor = Color.Beige;
+                columnHeaderStyle.Font = new Font("Verdana", 10, FontStyle.Bold);
+                dataGridView1.ColumnHeadersDefaultCellStyle = columnHeaderStyle;
+
+                // Set the column header names.
+                dataGridView1.Columns[0].Name = "Inv. č.";
+                dataGridView1.Columns[1].Name = "IP";
+                dataGridView1.Columns[2].Name = "Ping";
+
+                try
+                {
+                    SearchResultCollection results = mySearcher.FindAll();
+                    {
+
+
+
+                        foreach (SearchResult resEnt in mySearcher.FindAll())
+                        {
+                            string PCName = resEnt.GetDirectoryEntry().Name;
+
+
+                            dataGridView1.Rows.Add();
+                            dataGridView1.Rows[index].Cells["Inv. č."].Value = PCName.Remove(0, 3);
+                            index++;
+                        }
+
+                        mySearcher.Dispose();
+                        entry.Dispose();
+                    }
+                }
+                catch
+                {
+                    dataGridView1.Rows.Add();
+                    dataGridView1.Rows[index].Cells["Inv. č."].Value = "Nenalezeno žádné PC";
                 }
             }
-            catch
-            {
-                dataGridView1.Rows.Add();
-                dataGridView1.Rows[index].Cells["Inv. č."].Value = "Nenalezeno žádné PC";
-            }
+ 
 
          }
 
@@ -155,27 +243,109 @@ namespace Pinger
             // resolve the hostname into an iphost entry using the dns class
             try
             {
-                IPHostEntry iphost = System.Net.Dns.Resolve(hostname);
-                // get all of the possible IP addresses for this hostname
-                IPAddress[] addresses = iphost.AddressList;
-                // make a text representation of the list
-                StringBuilder addressList = new StringBuilder();
-                // get each ip address
-                foreach (IPAddress address in addresses)
+                XmlDocument doc = new XmlDocument();
+                doc.Load("Config.xml");
+                string DNSServer = doc.SelectSingleNode("/appSettings/configuration/DNSServer").InnerText;
+                var client = new LookupClient(IPAddress.Parse(DNSServer));
+                var result = client.Query(hostname, QueryType.A);
+                string response="";
+                foreach (var aRecord in result.Answers.ARecords())
                 {
-                    // append it to the list
-                    //addressList.Append("IP Address: ");
-                    addressList.Append(address.ToString());
-                    //addressList.Append(";");
-                    break;
+                    response = response + "," +aRecord.Address;
                 }
-                return addressList.ToString();
-
+                if (response == "") return "Neni v DNS";
+                return response.Remove(0, 1);
             }
             catch
             {
                 return "Neni v DNS";
             }
+        }
+
+        public static string EncryptString(string plainText, string sharedSecret)
+        {
+            string result = null;
+            RijndaelManaged aesAlg = null;
+
+            try
+            {
+                Rfc2898DeriveBytes key = new Rfc2898DeriveBytes(sharedSecret, _salt);
+                aesAlg = new RijndaelManaged();
+                aesAlg.Key = key.GetBytes(aesAlg.KeySize / 8);
+
+                ICryptoTransform encryptor = aesAlg.CreateEncryptor(aesAlg.Key, aesAlg.IV);
+
+                using (MemoryStream msEncrypt = new MemoryStream())
+                {
+                    msEncrypt.Write(BitConverter.GetBytes(aesAlg.IV.Length), 0, sizeof(int));
+                    msEncrypt.Write(aesAlg.IV, 0, aesAlg.IV.Length);
+                    using (CryptoStream csEncrypt = new CryptoStream(msEncrypt, encryptor, CryptoStreamMode.Write))
+                    {
+                        using (StreamWriter swEncrypt = new StreamWriter(csEncrypt))
+                        {
+                            swEncrypt.Write(plainText);
+                        }
+                    }
+                    result = Convert.ToBase64String(msEncrypt.ToArray());
+                }
+            }
+            finally
+            {
+                if (aesAlg != null)
+                    aesAlg.Clear();
+            }
+
+            return result;
+        }
+
+        public static string DecryptString(string cipherText, string sharedSecret)
+        {
+            RijndaelManaged aesAlg = null;
+            string result = null;
+
+            try
+            {
+                Rfc2898DeriveBytes key = new Rfc2898DeriveBytes(sharedSecret, _salt);
+                byte[] bytes = Convert.FromBase64String(cipherText);
+                using (MemoryStream msDecrypt = new MemoryStream(bytes))
+                {
+                    aesAlg = new RijndaelManaged();
+                    aesAlg.Key = key.GetBytes(aesAlg.KeySize / 8);
+                    aesAlg.IV = ReadByteArray(msDecrypt);
+                    ICryptoTransform decryptor = aesAlg.CreateDecryptor(aesAlg.Key, aesAlg.IV);
+                    using (CryptoStream csDecrypt = new CryptoStream(msDecrypt, decryptor, CryptoStreamMode.Read))
+                    {
+                        using (StreamReader srDecrypt = new StreamReader(csDecrypt))
+                        {
+                            result = srDecrypt.ReadToEnd();
+                        }
+                    }
+                }
+            }
+            finally
+            {
+                if (aesAlg != null)
+                    aesAlg.Clear();
+            }
+
+            return result;
+        }
+
+        private static byte[] ReadByteArray(Stream s)
+        {
+            byte[] rawLength = new byte[sizeof(int)];
+            if (s.Read(rawLength, 0, rawLength.Length) != rawLength.Length)
+            {
+                throw new SystemException("Stream did not contain properly formatted byte array");
+            }
+
+            byte[] buffer = new byte[BitConverter.ToInt32(rawLength, 0)];
+            if (s.Read(buffer, 0, buffer.Length) != buffer.Length)
+            {
+                throw new SystemException("Did not read byte array properly");
+            }
+
+            return buffer;
         }
 
         private void button1_Click(object sender, EventArgs e)
@@ -200,77 +370,157 @@ namespace Pinger
             doc.Load("Config.xml");
             string ADServer = doc.SelectSingleNode("/appSettings/configuration/ADServer").InnerText;
             string ADSearch = doc.SelectSingleNode("/appSettings/configuration/ADSearch").InnerText;
-            DirectoryEntry entry = new DirectoryEntry("LDAP://" + ADServer + "/OU=" + comboBox1.Text + "," + ADSearch);
-            DirectorySearcher mySearcher = new DirectorySearcher(entry);
-            mySearcher.Filter = ("(objectCategory=Computer)");
-            mySearcher.SizeLimit = int.MaxValue;
-            mySearcher.PageSize = int.MaxValue;
-            int index = 0;
-            ClearGrid();
-            dataGridView1.ColumnCount = 3;
-            dataGridView1.ColumnHeadersVisible = true;
-
-            
-
-            // Set the column header style.
-            DataGridViewCellStyle columnHeaderStyle = new DataGridViewCellStyle();
-
-            columnHeaderStyle.BackColor = Color.Beige;
-            columnHeaderStyle.Font = new Font("Verdana", 10, FontStyle.Bold);
-            dataGridView1.ColumnHeadersDefaultCellStyle = columnHeaderStyle;
-
-            // Set the column header names.
-            dataGridView1.Columns[0].Name = "Inv. č.";
-            dataGridView1.Columns[1].Name = "IP";
-            dataGridView1.Columns[2].Name = "Ping";
-
-            try
+            string ADUser = doc.SelectSingleNode("/appSettings/configuration/ADUser").InnerText;
+            //string ADPassword = doc.SelectSingleNode("/appSettings/configuration/ADPassword").InnerText;
+            string ADPassword = DecryptString(doc.SelectSingleNode("/appSettings/configuration/ADPassword").InnerText, configPassword);
+            string ADDomain = doc.SelectSingleNode("/appSettings/configuration/ADDomain").InnerText;
+            bool ADSsso = Convert.ToBoolean(doc.SelectSingleNode("/appSettings/configuration/ADsso").InnerText);
+            if (ADSsso)
             {
-                SearchResultCollection results = mySearcher.FindAll();
+                DirectoryEntry entry = new DirectoryEntry("LDAP://" + ADServer + "/OU=" + comboBox1.Text + "," + ADSearch);
+                DirectorySearcher mySearcher = new DirectorySearcher(entry);
+                mySearcher.Filter = ("(objectCategory=Computer)");
+                mySearcher.SizeLimit = int.MaxValue;
+                mySearcher.PageSize = int.MaxValue;
+                int index = 0;
+                ClearGrid();
+                dataGridView1.ColumnCount = 3;
+                dataGridView1.ColumnHeadersVisible = true;
+
+
+
+                // Set the column header style.
+                DataGridViewCellStyle columnHeaderStyle = new DataGridViewCellStyle();
+
+                columnHeaderStyle.BackColor = Color.Beige;
+                columnHeaderStyle.Font = new Font("Verdana", 10, FontStyle.Bold);
+                dataGridView1.ColumnHeadersDefaultCellStyle = columnHeaderStyle;
+
+                // Set the column header names.
+                dataGridView1.Columns[0].Name = "Inv. č.";
+                dataGridView1.Columns[1].Name = "IP";
+                dataGridView1.Columns[2].Name = "Ping";
+
+                try
                 {
-
-
-
-                    foreach (SearchResult resEnt in mySearcher.FindAll())
+                    SearchResultCollection results = mySearcher.FindAll();
                     {
-                        string PCName = resEnt.GetDirectoryEntry().Name;
-                        
 
-                        dataGridView1.Rows.Add();
-                        dataGridView1.Rows[index].Cells["Inv. č."].Value = PCName.Remove(0, 3);
-                        dataGridView1.Rows[index].Cells["IP"].Value = HostName2IP(PCName.Remove(0, 3) + ".fnol.loc");
-                        if (HostName2IP(PCName.Remove(0, 3) + ".fnol.loc") != "Neni v DNS")
+
+
+                        foreach (SearchResult resEnt in mySearcher.FindAll())
                         {
-                            bool live = PingHost(PCName.Remove(0, 3) + ".fnol.loc");
-                            if (live == true)
+                            string PCName = resEnt.GetDirectoryEntry().Name;
+
+
+                            dataGridView1.Rows.Add();
+                            dataGridView1.Rows[index].Cells["Inv. č."].Value = PCName.Remove(0, 3);
+                            dataGridView1.Rows[index].Cells["IP"].Value = HostName2IP(PCName.Remove(0, 3) + "." + ADDomain);
+                            if (HostName2IP(PCName.Remove(0, 3) + "." + ADDomain) != "Neni v DNS")
                             {
-                                dataGridView1.Rows[index].Cells["Ping"].Value = "OK";
-                                dataGridView1.Rows[index].DefaultCellStyle.BackColor = Color.Green;
+                                bool live = PingHost(PCName.Remove(0, 3) + "." + ADDomain);
+                                if (live == true)
+                                {
+                                    dataGridView1.Rows[index].Cells["Ping"].Value = "OK";
+                                    dataGridView1.Rows[index].DefaultCellStyle.BackColor = Color.Green;
+                                }
+                                else
+                                {
+                                    dataGridView1.Rows[index].Cells["Ping"].Value = "Vypnute";
+                                    dataGridView1.Rows[index].DefaultCellStyle.BackColor = Color.Red;
+                                }
                             }
                             else
                             {
-                                dataGridView1.Rows[index].Cells["Ping"].Value = "Vypnute";
-                                dataGridView1.Rows[index].DefaultCellStyle.BackColor = Color.Red;
+                                dataGridView1.Rows[index].Cells["Ping"].Value = "Nelze pingnout";
+                                dataGridView1.Rows[index].DefaultCellStyle.BackColor = Color.Yellow;
                             }
+                            index++;
                         }
-                        else
-                        {
-                            dataGridView1.Rows[index].Cells["Ping"].Value = "Nelze pingnout";
-                            dataGridView1.Rows[index].DefaultCellStyle.BackColor = Color.Yellow;
-                        }
-                        index++;
-                    }
 
-                    mySearcher.Dispose();
-                    entry.Dispose();
+                        mySearcher.Dispose();
+                        entry.Dispose();
+                    }
+                }
+                catch
+                {
+                    dataGridView1.Rows.Add();
+                    dataGridView1.Rows[index].Cells["Inv. č."].Value = "Nenalezeno žádné PC";
                 }
             }
-            catch
+            else
             {
-                dataGridView1.Rows.Add();
-                dataGridView1.Rows[index].Cells["Inv. č."].Value = "Nenalezeno žádné PC";
-            }
+                DirectoryEntry entry = new DirectoryEntry("LDAP://" + ADServer + "/OU=" + comboBox1.Text + "," + ADSearch, ADUser, ADPassword);
+                DirectorySearcher mySearcher = new DirectorySearcher(entry);
+                mySearcher.Filter = ("(objectCategory=Computer)");
+                mySearcher.SizeLimit = int.MaxValue;
+                mySearcher.PageSize = int.MaxValue;
+                int index = 0;
+                ClearGrid();
+                dataGridView1.ColumnCount = 3;
+                dataGridView1.ColumnHeadersVisible = true;
 
+
+
+                // Set the column header style.
+                DataGridViewCellStyle columnHeaderStyle = new DataGridViewCellStyle();
+
+                columnHeaderStyle.BackColor = Color.Beige;
+                columnHeaderStyle.Font = new Font("Verdana", 10, FontStyle.Bold);
+                dataGridView1.ColumnHeadersDefaultCellStyle = columnHeaderStyle;
+
+                // Set the column header names.
+                dataGridView1.Columns[0].Name = "Inv. č.";
+                dataGridView1.Columns[1].Name = "IP";
+                dataGridView1.Columns[2].Name = "Ping";
+
+                try
+                {
+                    SearchResultCollection results = mySearcher.FindAll();
+                    {
+
+
+
+                        foreach (SearchResult resEnt in mySearcher.FindAll())
+                        {
+                            string PCName = resEnt.GetDirectoryEntry().Name;
+
+
+                            dataGridView1.Rows.Add();
+                            dataGridView1.Rows[index].Cells["Inv. č."].Value = PCName.Remove(0, 3);
+                            dataGridView1.Rows[index].Cells["IP"].Value = HostName2IP(PCName.Remove(0, 3) + "." + ADDomain);
+                            if (HostName2IP(PCName.Remove(0, 3) + "." + ADDomain) != "Neni v DNS")
+                            {
+                                bool live = PingHost(PCName.Remove(0, 3) + "." + ADDomain);
+                                if (live == true)
+                                {
+                                    dataGridView1.Rows[index].Cells["Ping"].Value = "OK";
+                                    dataGridView1.Rows[index].DefaultCellStyle.BackColor = Color.Green;
+                                }
+                                else
+                                {
+                                    dataGridView1.Rows[index].Cells["Ping"].Value = "Vypnute";
+                                    dataGridView1.Rows[index].DefaultCellStyle.BackColor = Color.Red;
+                                }
+                            }
+                            else
+                            {
+                                dataGridView1.Rows[index].Cells["Ping"].Value = "Nelze pingnout";
+                                dataGridView1.Rows[index].DefaultCellStyle.BackColor = Color.Yellow;
+                            }
+                            index++;
+                        }
+
+                        mySearcher.Dispose();
+                        entry.Dispose();
+                    }
+                }
+                catch
+                {
+                    dataGridView1.Rows.Add();
+                    dataGridView1.Rows[index].Cells["Inv. č."].Value = "Nenalezeno žádné PC";
+                }
+            }
         }
 
         private void button3_Click(object sender, EventArgs e)
