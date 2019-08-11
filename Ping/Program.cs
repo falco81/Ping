@@ -24,7 +24,11 @@ namespace Pinger
 
             if (Array.Exists(args, s => s.Equals("-p")))
             {
-                // redirect console output to parent process;
+                Application.EnableVisualStyles();
+                Application.SetCompatibleTextRenderingDefault(false);
+                Application.Run(new Password());
+
+/*              // redirect console output to parent process;
                 // must be before any calls to Console.WriteLine()
                 AttachConsole(ATTACH_PARENT_PROCESS);
 
@@ -39,13 +43,14 @@ namespace Pinger
                 node.InnerText = crypttext;
                 doc.Save("Config.xml");
                 //Console.ReadKey();
+*/
             }
             else
             {
-                if (args.Length > 0)
-                {
+              //  if (args.Length > 0)
+              //  {
                     //MessageBox.Show("Arguments: " + string.Join(",", args));
-                }
+              //  }
 
                 // show GUI like
                 Application.EnableVisualStyles();
