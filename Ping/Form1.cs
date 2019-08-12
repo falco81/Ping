@@ -28,17 +28,17 @@ namespace Pinger
 
         public void ClearGrid()
         {
-           /* int clrowCount = dataGridView1.Rows.Count;
-            for (int cln = 0; cln < clrowCount; cln++)
-            {
-                if (dataGridView1.Rows[0].IsNewRow == false)
-                    dataGridView1.Rows.RemoveAt(0);
-            }*/
+            /* int clrowCount = dataGridView1.Rows.Count;
+             for (int cln = 0; cln < clrowCount; cln++)
+             {
+                 if (dataGridView1.Rows[0].IsNewRow == false)
+                     dataGridView1.Rows.RemoveAt(0);
+             }*/
             dataGridView1.DataSource = null;
             dataGridView1.Rows.Clear();
             dataGridView1.ColumnCount = 0;
             //dataGridView1.Refresh();
-           
+
         }
 
         public void RefreshOU()
@@ -206,22 +206,22 @@ namespace Pinger
                     dataGridView1.Rows[index].Cells["Inv. č."].Value = "Nenalezeno žádné PC";
                 }
             }
- 
 
-         }
+
+        }
 
         public Form1()
         {
             InitializeComponent();
         }
 
-        public static bool PingHost(string nameOrAddress)
+        public static bool PingHost(string nameOrAddress, int timeout)
         {
             bool pingable = false;
             Ping pinger = new Ping();
             try
             {
-                PingReply reply = pinger.Send(nameOrAddress);
+                PingReply reply = pinger.Send(nameOrAddress, timeout);
                 pingable = reply.Status == IPStatus.Success;
             }
             catch (PingException)
@@ -243,10 +243,10 @@ namespace Pinger
                 string DNSServer = doc.SelectSingleNode("/appSettings/configuration/DNSServer").InnerText;
                 var client = new LookupClient(IPAddress.Parse(DNSServer));
                 var result = client.Query(hostname, QueryType.A);
-                string response="";
+                string response = "";
                 foreach (var aRecord in result.Answers.ARecords())
                 {
-                    response = response + "," +aRecord.Address;
+                    response = response + "," + aRecord.Address;
                 }
                 if (response == "") return "Neni v DNS";
                 return response.Remove(0, 1);
@@ -257,7 +257,7 @@ namespace Pinger
             }
         }
 
-       
+
         private void button1_Click(object sender, EventArgs e)
         {
             if (Control.ModifierKeys == Keys.Shift)
@@ -284,6 +284,7 @@ namespace Pinger
             //string ADPassword = doc.SelectSingleNode("/appSettings/configuration/ADPassword").InnerText;
             string ADPassword = CryptUtils.DecryptString(doc.SelectSingleNode("/appSettings/configuration/ADPassword").InnerText, CryptUtils.configPassword);
             string ADDomain = doc.SelectSingleNode("/appSettings/configuration/ADDomain").InnerText;
+            int timeout = Convert.ToInt32(doc.SelectSingleNode("/appSettings/configuration/PingTimeout").InnerText);
             bool ADSsso = Convert.ToBoolean(doc.SelectSingleNode("/appSettings/configuration/ADsso").InnerText);
             if (ADSsso)
             {
@@ -328,7 +329,7 @@ namespace Pinger
                             dataGridView1.Rows[index].Cells["IP"].Value = HostName2IP(PCName.Remove(0, 3) + "." + ADDomain);
                             if (dataGridView1.Rows[index].Cells["IP"].Value.ToString() != "Neni v DNS")
                             {
-                                bool live = PingHost(dataGridView1.Rows[index].Cells["IP"].Value.ToString());
+                                bool live = PingHost(dataGridView1.Rows[index].Cells["IP"].Value.ToString(), timeout);
                                 if (live == true)
                                 {
                                     dataGridView1.Rows[index].Cells["Ping"].Value = "OK";
@@ -403,7 +404,7 @@ namespace Pinger
                             dataGridView1.Rows[index].Cells["IP"].Value = HostName2IP(PCName.Remove(0, 3) + "." + ADDomain);
                             if (dataGridView1.Rows[index].Cells["IP"].Value.ToString() != "Neni v DNS")
                             {
-                                bool live = PingHost(dataGridView1.Rows[index].Cells["IP"].Value.ToString());
+                                bool live = PingHost(dataGridView1.Rows[index].Cells["IP"].Value.ToString(), timeout);
                                 if (live == true)
                                 {
                                     dataGridView1.Rows[index].Cells["Ping"].Value = "OK";
@@ -436,7 +437,7 @@ namespace Pinger
             }
         }
 
-       
+
         private void button4_Click(object sender, EventArgs e)
         {
             // creating Excel Application
@@ -459,7 +460,7 @@ namespace Pinger
                 worksheet.Cells[1, i] = dataGridView1.Columns[i - 1].HeaderText;
             }
             // storing Each row and column value to excel sheet
-            for (int i = 0; i < dataGridView1.Rows.Count-1; i++)
+            for (int i = 0; i < dataGridView1.Rows.Count - 1; i++)
             {
                 for (int j = 0; j < dataGridView1.Columns.Count; j++)
                 {
@@ -479,6 +480,7 @@ namespace Pinger
                 XmlDocument doc = new XmlDocument();
                 doc.Load("Config.xml");
                 string ADDomain = doc.SelectSingleNode("/appSettings/configuration/ADDomain").InnerText;
+                int timeout = Convert.ToInt32(doc.SelectSingleNode("/appSettings/configuration/PingTimeout").InnerText);
                 string filePath = openFileDialog1.FileName;
                 string extension = Path.GetExtension(filePath);
                 ClearGrid();
@@ -547,7 +549,7 @@ namespace Pinger
                     dataGridView1.Rows[n].Cells["IP"].Value = HostName2IP(dataGridView1.Rows[n].Cells["Inv. č."].Value + "." + ADDomain);
                     if (dataGridView1.Rows[n].Cells["IP"].Value.ToString() != "Neni v DNS")
                     {
-                        bool live = PingHost(dataGridView1.Rows[n].Cells["IP"].Value.ToString());
+                        bool live = PingHost(dataGridView1.Rows[n].Cells["IP"].Value.ToString(), timeout);
                         if (live == true)
                         {
                             dataGridView1.Rows[n].Cells["Ping"].Value = "OK";
@@ -611,19 +613,20 @@ namespace Pinger
 
         private void Button5_Click(object sender, EventArgs e)
         {
+            XmlDocument doc = new XmlDocument();
+            doc.Load("Config.xml");
+            string ADDomain = doc.SelectSingleNode("/appSettings/configuration/ADDomain").InnerText;
+            int timeout = Convert.ToInt32(doc.SelectSingleNode("/appSettings/configuration/PingTimeout").InnerText);
             int rowCount2 = dataGridView1.Rows.Count;
             progressBar1.Maximum = rowCount2;
             for (int n = 0; n < rowCount2 - 1; n++)
             {
                 progressBar1.Value++;
-                XmlDocument doc = new XmlDocument();
-                doc.Load("Config.xml");
-                string ADDomain = doc.SelectSingleNode("/appSettings/configuration/ADDomain").InnerText;
 
                 dataGridView1.Rows[n].Cells["IP"].Value = HostName2IP(dataGridView1.Rows[n].Cells["Inv. č."].Value + "." + ADDomain);
                 if (dataGridView1.Rows[n].Cells["IP"].Value.ToString() != "Neni v DNS")
                 {
-                    bool live = PingHost(dataGridView1.Rows[n].Cells["IP"].Value.ToString());
+                    bool live = PingHost(dataGridView1.Rows[n].Cells["IP"].Value.ToString(), timeout);
                     if (live == true)
                     {
                         dataGridView1.Rows[n].Cells["Ping"].Value = "OK";
@@ -642,7 +645,7 @@ namespace Pinger
                 }
 
             }
-            progressBar1.Value=0;
+            progressBar1.Value = 0;
         }
 
         private void Button6_Click(object sender, EventArgs e)

@@ -5,6 +5,7 @@
     <ADServer>172.29.11.2</ADServer>
     <ADDomain>kr-olomoucky.int</ADDomain>
     <ADSearch>OU=PC and NB W10,DC=kr-olomoucky,DC=int</ADSearch>
+    <PingTimeout>100</PingTimeout>
     <ADsso>False</ADsso>
     <ADUser>
     </ADUser>

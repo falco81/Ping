@@ -36,6 +36,7 @@ namespace Pinger
                 doc.SelectSingleNode("/appSettings/configuration/ADServer").InnerText = textBox2.Text;
                 doc.SelectSingleNode("/appSettings/configuration/ADDomain").InnerText = textBox3.Text;
                 doc.SelectSingleNode("/appSettings/configuration/ADSearch").InnerText = textBox4.Text;
+                doc.SelectSingleNode("/appSettings/configuration/PingTimeout").InnerText = Convert.ToString(numericUpDown1.Value);
                 doc.SelectSingleNode("/appSettings/configuration/ADsso").InnerText = Convert.ToString(checkBox1.Checked);
                 doc.SelectSingleNode("/appSettings/configuration/ADUser").InnerText = textBox5.Text;
                 doc.SelectSingleNode("/appSettings/configuration/ADPassword").InnerText = CryptUtils.EncryptString(textBox6.Text, CryptUtils.configPassword);
@@ -52,6 +53,7 @@ namespace Pinger
             textBox2.Text = doc.SelectSingleNode("/appSettings/configuration/ADServer").InnerText;
             textBox3.Text = doc.SelectSingleNode("/appSettings/configuration/ADDomain").InnerText;
             textBox4.Text = doc.SelectSingleNode("/appSettings/configuration/ADSearch").InnerText;
+            numericUpDown1.Value = Convert.ToInt32(doc.SelectSingleNode("/appSettings/configuration/PingTimeout").InnerText);
             checkBox1.Checked = Convert.ToBoolean(doc.SelectSingleNode("/appSettings/configuration/ADsso").InnerText);
             if (checkBox1.Checked==false)
             {
