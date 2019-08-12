@@ -38,7 +38,7 @@ namespace Pinger
                 doc.SelectSingleNode("/appSettings/configuration/ADSearch").InnerText = textBox4.Text;
                 doc.SelectSingleNode("/appSettings/configuration/ADsso").InnerText = Convert.ToString(checkBox1.Checked);
                 doc.SelectSingleNode("/appSettings/configuration/ADUser").InnerText = textBox5.Text;
-                doc.SelectSingleNode("/appSettings/configuration/ADPassword").InnerText = Form1.EncryptString(textBox6.Text, Form1.configPassword);
+                doc.SelectSingleNode("/appSettings/configuration/ADPassword").InnerText = CryptUtils.EncryptString(textBox6.Text, CryptUtils.configPassword);
                 doc.Save("Config.xml");
                 this.Close();
             }
@@ -58,14 +58,14 @@ namespace Pinger
                 textBox5.Enabled = true;
                 textBox6.Enabled = true;
                 textBox5.Text = doc.SelectSingleNode("/appSettings/configuration/ADUser").InnerText;
-                textBox6.Text = Form1.DecryptString(doc.SelectSingleNode("/appSettings/configuration/ADPassword").InnerText, Form1.configPassword);
+                textBox6.Text = CryptUtils.DecryptString(doc.SelectSingleNode("/appSettings/configuration/ADPassword").InnerText, CryptUtils.configPassword);
             }
             else
             {
                 textBox5.Enabled = false;
                 textBox6.Enabled = false;
                 textBox5.Text = doc.SelectSingleNode("/appSettings/configuration/ADUser").InnerText;
-                textBox6.Text = Form1.DecryptString(doc.SelectSingleNode("/appSettings/configuration/ADPassword").InnerText, Form1.configPassword);
+                textBox6.Text = CryptUtils.DecryptString(doc.SelectSingleNode("/appSettings/configuration/ADPassword").InnerText, CryptUtils.configPassword);
             }
         }
 

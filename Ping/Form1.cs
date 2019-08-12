@@ -26,11 +26,6 @@ namespace Pinger
     public partial class Form1 : Form
     {
 
-        private string Excel03ConString = "Provider=Microsoft.Jet.OLEDB.4.0;Data Source={0};Extended Properties='Excel 8.0;HDR={1}'";
-        private string Excel07ConString = "Provider=Microsoft.ACE.OLEDB.12.0;Data Source={0};Extended Properties='Excel 12.0;HDR={1}'";
-        public static string configPassword = "muGcqhykTkOHM2pD7UXaBWXU";
-        private static byte[] _salt = Encoding.ASCII.GetBytes("0123456789abcdef");
-
         public void ClearGrid()
         {
            /* int clrowCount = dataGridView1.Rows.Count;
@@ -55,7 +50,7 @@ namespace Pinger
             string ADSearch = doc.SelectSingleNode("/appSettings/configuration/ADSearch").InnerText;
             string ADUser = doc.SelectSingleNode("/appSettings/configuration/ADUser").InnerText;
             //string ADPassword = doc.SelectSingleNode("/appSettings/configuration/ADPassword").InnerText;
-            string ADPassword = DecryptString(doc.SelectSingleNode("/appSettings/configuration/ADPassword").InnerText, configPassword);
+            string ADPassword = CryptUtils.DecryptString(doc.SelectSingleNode("/appSettings/configuration/ADPassword").InnerText, CryptUtils.configPassword);
             bool ADSsso = Convert.ToBoolean(doc.SelectSingleNode("/appSettings/configuration/ADsso").InnerText);
             if (ADSsso)
             {
@@ -104,7 +99,7 @@ namespace Pinger
             string ADSearch = doc.SelectSingleNode("/appSettings/configuration/ADSearch").InnerText;
             string ADUser = doc.SelectSingleNode("/appSettings/configuration/ADUser").InnerText;
             //string ADPassword = doc.SelectSingleNode("/appSettings/configuration/ADPassword").InnerText;
-            string ADPassword = DecryptString(doc.SelectSingleNode("/appSettings/configuration/ADPassword").InnerText, configPassword);
+            string ADPassword = CryptUtils.DecryptString(doc.SelectSingleNode("/appSettings/configuration/ADPassword").InnerText, CryptUtils.configPassword);
             bool ADSsso = Convert.ToBoolean(doc.SelectSingleNode("/appSettings/configuration/ADsso").InnerText);
             if (ADSsso)
             {
@@ -262,92 +257,7 @@ namespace Pinger
             }
         }
 
-        public static string EncryptString(string plainText, string sharedSecret)
-        {
-            string result = null;
-            RijndaelManaged aesAlg = null;
-
-            try
-            {
-                Rfc2898DeriveBytes key = new Rfc2898DeriveBytes(sharedSecret, _salt);
-                aesAlg = new RijndaelManaged();
-                aesAlg.Key = key.GetBytes(aesAlg.KeySize / 8);
-
-                ICryptoTransform encryptor = aesAlg.CreateEncryptor(aesAlg.Key, aesAlg.IV);
-
-                using (MemoryStream msEncrypt = new MemoryStream())
-                {
-                    msEncrypt.Write(BitConverter.GetBytes(aesAlg.IV.Length), 0, sizeof(int));
-                    msEncrypt.Write(aesAlg.IV, 0, aesAlg.IV.Length);
-                    using (CryptoStream csEncrypt = new CryptoStream(msEncrypt, encryptor, CryptoStreamMode.Write))
-                    {
-                        using (StreamWriter swEncrypt = new StreamWriter(csEncrypt))
-                        {
-                            swEncrypt.Write(plainText);
-                        }
-                    }
-                    result = Convert.ToBase64String(msEncrypt.ToArray());
-                }
-            }
-            finally
-            {
-                if (aesAlg != null)
-                    aesAlg.Clear();
-            }
-
-            return result;
-        }
-
-        public static string DecryptString(string cipherText, string sharedSecret)
-        {
-            RijndaelManaged aesAlg = null;
-            string result = null;
-
-            try
-            {
-                Rfc2898DeriveBytes key = new Rfc2898DeriveBytes(sharedSecret, _salt);
-                byte[] bytes = Convert.FromBase64String(cipherText);
-                using (MemoryStream msDecrypt = new MemoryStream(bytes))
-                {
-                    aesAlg = new RijndaelManaged();
-                    aesAlg.Key = key.GetBytes(aesAlg.KeySize / 8);
-                    aesAlg.IV = ReadByteArray(msDecrypt);
-                    ICryptoTransform decryptor = aesAlg.CreateDecryptor(aesAlg.Key, aesAlg.IV);
-                    using (CryptoStream csDecrypt = new CryptoStream(msDecrypt, decryptor, CryptoStreamMode.Read))
-                    {
-                        using (StreamReader srDecrypt = new StreamReader(csDecrypt))
-                        {
-                            result = srDecrypt.ReadToEnd();
-                        }
-                    }
-                }
-            }
-            finally
-            {
-                if (aesAlg != null)
-                    aesAlg.Clear();
-            }
-
-            return result;
-        }
-
-        private static byte[] ReadByteArray(Stream s)
-        {
-            byte[] rawLength = new byte[sizeof(int)];
-            if (s.Read(rawLength, 0, rawLength.Length) != rawLength.Length)
-            {
-                throw new SystemException("Stream did not contain properly formatted byte array");
-            }
-
-            byte[] buffer = new byte[BitConverter.ToInt32(rawLength, 0)];
-            if (s.Read(buffer, 0, buffer.Length) != buffer.Length)
-            {
-                throw new SystemException("Did not read byte array properly");
-            }
-
-            return buffer;
-        }
-
+       
         private void button1_Click(object sender, EventArgs e)
         {
             if (Control.ModifierKeys == Keys.Shift)
@@ -372,7 +282,7 @@ namespace Pinger
             string ADSearch = doc.SelectSingleNode("/appSettings/configuration/ADSearch").InnerText;
             string ADUser = doc.SelectSingleNode("/appSettings/configuration/ADUser").InnerText;
             //string ADPassword = doc.SelectSingleNode("/appSettings/configuration/ADPassword").InnerText;
-            string ADPassword = DecryptString(doc.SelectSingleNode("/appSettings/configuration/ADPassword").InnerText, configPassword);
+            string ADPassword = CryptUtils.DecryptString(doc.SelectSingleNode("/appSettings/configuration/ADPassword").InnerText, CryptUtils.configPassword);
             string ADDomain = doc.SelectSingleNode("/appSettings/configuration/ADDomain").InnerText;
             bool ADSsso = Convert.ToBoolean(doc.SelectSingleNode("/appSettings/configuration/ADsso").InnerText);
             if (ADSsso)
@@ -405,20 +315,20 @@ namespace Pinger
                 {
                     SearchResultCollection results = mySearcher.FindAll();
                     {
-
-
+                        progressBar1.Maximum = mySearcher.FindAll().Count;
 
                         foreach (SearchResult resEnt in mySearcher.FindAll())
                         {
+                            progressBar1.Value++;
                             string PCName = resEnt.GetDirectoryEntry().Name;
 
 
                             dataGridView1.Rows.Add();
                             dataGridView1.Rows[index].Cells["Inv. č."].Value = PCName.Remove(0, 3);
                             dataGridView1.Rows[index].Cells["IP"].Value = HostName2IP(PCName.Remove(0, 3) + "." + ADDomain);
-                            if (HostName2IP(PCName.Remove(0, 3) + "." + ADDomain) != "Neni v DNS")
+                            if (dataGridView1.Rows[index].Cells["IP"].Value.ToString() != "Neni v DNS")
                             {
-                                bool live = PingHost(PCName.Remove(0, 3) + "." + ADDomain);
+                                bool live = PingHost(dataGridView1.Rows[index].Cells["IP"].Value.ToString());
                                 if (live == true)
                                 {
                                     dataGridView1.Rows[index].Cells["Ping"].Value = "OK";
@@ -440,6 +350,7 @@ namespace Pinger
 
                         mySearcher.Dispose();
                         entry.Dispose();
+                        progressBar1.Value = 0;
                     }
                 }
                 catch
@@ -479,19 +390,20 @@ namespace Pinger
                     SearchResultCollection results = mySearcher.FindAll();
                     {
 
-
+                        progressBar1.Maximum = mySearcher.FindAll().Count;
 
                         foreach (SearchResult resEnt in mySearcher.FindAll())
                         {
+                            progressBar1.Value++;
                             string PCName = resEnt.GetDirectoryEntry().Name;
 
 
                             dataGridView1.Rows.Add();
                             dataGridView1.Rows[index].Cells["Inv. č."].Value = PCName.Remove(0, 3);
                             dataGridView1.Rows[index].Cells["IP"].Value = HostName2IP(PCName.Remove(0, 3) + "." + ADDomain);
-                            if (HostName2IP(PCName.Remove(0, 3) + "." + ADDomain) != "Neni v DNS")
+                            if (dataGridView1.Rows[index].Cells["IP"].Value.ToString() != "Neni v DNS")
                             {
-                                bool live = PingHost(PCName.Remove(0, 3) + "." + ADDomain);
+                                bool live = PingHost(dataGridView1.Rows[index].Cells["IP"].Value.ToString());
                                 if (live == true)
                                 {
                                     dataGridView1.Rows[index].Cells["Ping"].Value = "OK";
@@ -513,6 +425,7 @@ namespace Pinger
 
                         mySearcher.Dispose();
                         entry.Dispose();
+                        progressBar1.Value = 0;
                     }
                 }
                 catch
@@ -523,13 +436,7 @@ namespace Pinger
             }
         }
 
-        private void button3_Click(object sender, EventArgs e)
-        {
-            
-    
-          
-        }
-
+       
         private void button4_Click(object sender, EventArgs e)
         {
             // creating Excel Application
@@ -567,88 +474,154 @@ namespace Pinger
 
         private void button3_Click_1(object sender, EventArgs e)
         {
-            openFileDialog1.ShowDialog();
+            if (openFileDialog1.ShowDialog() == DialogResult.OK)
+            {
+                XmlDocument doc = new XmlDocument();
+                doc.Load("Config.xml");
+                string ADDomain = doc.SelectSingleNode("/appSettings/configuration/ADDomain").InnerText;
+                string filePath = openFileDialog1.FileName;
+                string extension = Path.GetExtension(filePath);
+                ClearGrid();
+
+                // Get the Excel application object.
+                Excel.Application excel_app = new Excel.Application();
+
+                // Make Excel visible (optional).
+                excel_app.Visible = true;
+
+                // Open the workbook read-only.
+                Excel.Workbook workbook = excel_app.Workbooks.Open(
+                    filePath,
+                    Type.Missing, true, Type.Missing, Type.Missing,
+                    Type.Missing, Type.Missing, Type.Missing, Type.Missing,
+                    Type.Missing, Type.Missing, Type.Missing, Type.Missing,
+                    Type.Missing, Type.Missing);
+
+                // Get the first worksheet.
+                Excel.Worksheet sheet = (Excel.Worksheet)workbook.Sheets[1];
+
+                // Get the used range.
+                Excel.Range used_range = sheet.UsedRange;
+
+                // Get the maximum row and column number.
+                int max_row = used_range.Rows.Count;
+                int max_col = used_range.Columns.Count;
+
+                // Get the sheet's values.
+                object[,] values = (object[,])used_range.Value2;
+
+                // Get the column titles.
+                SetGridColumns(dataGridView1, values, max_col);
+
+                // Get the data.
+                SetGridContents(dataGridView1, values, max_row, max_col);
+
+                // Close the workbook without saving changes.
+                workbook.Close(false, Type.Missing, Type.Missing);
+
+                // Close the Excel server.
+                excel_app.Quit();
+
+
+
+                // Set the column header style.
+                DataGridViewCellStyle columnHeaderStyle = new DataGridViewCellStyle();
+
+                columnHeaderStyle.BackColor = Color.Beige;
+                columnHeaderStyle.Font = new Font("Verdana", 10, FontStyle.Bold);
+                dataGridView1.ColumnHeadersDefaultCellStyle = columnHeaderStyle;
+                // Set the column header names.
+                dataGridView1.Columns[0].Name = "Inv. č.";
+                dataGridView1.Columns[1].Name = "IP";
+                dataGridView1.Columns[2].Name = "Ping";
+                dataGridView1.Columns[0].HeaderText = "Inv. č.";
+                dataGridView1.Columns[1].HeaderText = "IP";
+                dataGridView1.Columns[2].HeaderText = "Ping";
+
+                int rowCount2 = dataGridView1.Rows.Count;
+                progressBar1.Maximum = rowCount2;
+                for (int n = 0; n < rowCount2 - 1; n++)
+                {
+                    progressBar1.Value++;
+
+                    dataGridView1.Rows[n].Cells["IP"].Value = HostName2IP(dataGridView1.Rows[n].Cells["Inv. č."].Value + "." + ADDomain);
+                    if (dataGridView1.Rows[n].Cells["IP"].Value.ToString() != "Neni v DNS")
+                    {
+                        bool live = PingHost(dataGridView1.Rows[n].Cells["IP"].Value.ToString());
+                        if (live == true)
+                        {
+                            dataGridView1.Rows[n].Cells["Ping"].Value = "OK";
+                            dataGridView1.Rows[n].DefaultCellStyle.BackColor = Color.Green;
+                        }
+                        else
+                        {
+                            dataGridView1.Rows[n].Cells["Ping"].Value = "Vypnute";
+                            dataGridView1.Rows[n].DefaultCellStyle.BackColor = Color.Red;
+                        }
+                    }
+                    else
+                    {
+                        dataGridView1.Rows[n].Cells["Ping"].Value = "Nelze pingnout";
+                        dataGridView1.Rows[n].DefaultCellStyle.BackColor = Color.Yellow;
+                    }
+
+                }
+                progressBar1.Value = 0;
+
+            }
         }
 
-        private void openFileDialog1_FileOk(object sender, CancelEventArgs e)
+        private void SetGridColumns(DataGridView dgv,
+           object[,] values, int max_col)
         {
-            string filePath = openFileDialog1.FileName;
-            string extension = Path.GetExtension(filePath);
-            //string header = rbHeaderYes.Checked ? "YES" : "NO";
-            string header = "YES";
-            string conStr;
-            //string sheetName;
+            dataGridView1.Columns.Clear();
 
-            conStr = string.Empty;
-            switch (extension)
+            // Get the title values.
+            for (int col = 1; col <= max_col; col++)
             {
-
-                case ".xls": //Excel 97-03
-                    conStr = string.Format(Excel03ConString, filePath, header);
-                    break;
-
-                case ".xlsx": //Excel 07
-                    conStr = string.Format(Excel07ConString, filePath, header);
-                    break;
+                string title = (string)values[1, col];
+                dgv.Columns.Add("col_" + title, title);
             }
+        }
 
-            ClearGrid();
-
-            //Get the name of the First Sheet.
-            /*using (OleDbConnection con = new OleDbConnection(conStr))
+        // Set the grid's contents.
+        private void SetGridContents(DataGridView dgv,
+            object[,] values, int max_row, int max_col)
+        {
+            // Copy the values into the grid.
+            for (int row = 2; row <= max_row; row++)
             {
-                using (OleDbCommand cmd = new OleDbCommand())
-                {
-                    cmd.Connection = con;
-                    con.Open();
-                    DataTable dtExcelSchema = con.GetOleDbSchemaTable(OleDbSchemaGuid.Tables, null);
-                    sheetName = dtExcelSchema.Rows[0]["TABLE_NAME"].ToString();
-                    MessageBox.Show(sheetName);
-                    con.Close();
-                }
-            }*/
-
-            //Read Data from the First Sheet.
-            using (OleDbConnection con = new OleDbConnection(conStr))
-            {
-                using (OleDbCommand cmd = new OleDbCommand())
-                {
-                    using (OleDbDataAdapter oda = new OleDbDataAdapter())
-                    {
-                        DataTable dt = new DataTable();
-                        cmd.CommandText = "SELECT * From [Ping$]";
-                        cmd.Connection = con;
-                        con.Open();
-                        oda.SelectCommand = cmd;
-                        oda.Fill(dt);
-                        con.Close();
-
-                        //Populate DataGridView.
-                        dataGridView1.DataSource = dt;
-                    }
-                }
+                object[] row_values = new object[max_col];
+                for (int col = 1; col <= max_col; col++)
+                    row_values[col - 1] = values[row, col];
+                dgv.Rows.Add(row_values);
             }
-            // Set the column header style.
-            DataGridViewCellStyle columnHeaderStyle = new DataGridViewCellStyle();
+        }
 
-            columnHeaderStyle.BackColor = Color.Beige;
-            columnHeaderStyle.Font = new Font("Verdana", 10, FontStyle.Bold);
-            dataGridView1.ColumnHeadersDefaultCellStyle = columnHeaderStyle;
-            // Set the column header names.
-            dataGridView1.Columns[0].Name = "Inv. č.";
-            dataGridView1.Columns[1].Name = "IP";
-            dataGridView1.Columns[2].Name = "Ping";
-            dataGridView1.Columns[0].HeaderText = "Inv. č.";
-            dataGridView1.Columns[1].HeaderText = "IP";
-            dataGridView1.Columns[2].HeaderText = "Ping";
-            
+
+        private void Form1_Load(object sender, EventArgs e)
+        {
+            RefreshOU();
+        }
+
+        private void comboBox1_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            ReadPC();
+        }
+
+        private void Button5_Click(object sender, EventArgs e)
+        {
             int rowCount2 = dataGridView1.Rows.Count;
-            for (int n = 0; n < rowCount2-1; n++)
+            progressBar1.Maximum = rowCount2;
+            for (int n = 0; n < rowCount2 - 1; n++)
             {
+                progressBar1.Value++;
+                XmlDocument doc = new XmlDocument();
+                doc.Load("Config.xml");
+                string ADDomain = doc.SelectSingleNode("/appSettings/configuration/ADDomain").InnerText;
 
-
-                dataGridView1.Rows[n].Cells["IP"].Value = HostName2IP(dataGridView1.Rows[n].Cells["Inv. č."].Value + ".fnol.loc");
-                if (HostName2IP(dataGridView1.Rows[n].Cells["IP"].Value.ToString()) != "Neni v DNS")
+                dataGridView1.Rows[n].Cells["IP"].Value = HostName2IP(dataGridView1.Rows[n].Cells["Inv. č."].Value + "." + ADDomain);
+                if (dataGridView1.Rows[n].Cells["IP"].Value.ToString() != "Neni v DNS")
                 {
                     bool live = PingHost(dataGridView1.Rows[n].Cells["IP"].Value.ToString());
                     if (live == true)
@@ -667,22 +640,14 @@ namespace Pinger
                     dataGridView1.Rows[n].Cells["Ping"].Value = "Nelze pingnout";
                     dataGridView1.Rows[n].DefaultCellStyle.BackColor = Color.Yellow;
                 }
-                
+
             }
-            
+            progressBar1.Value=0;
         }
 
-        private void Form1_Load(object sender, EventArgs e)
+        private void Button6_Click(object sender, EventArgs e)
         {
-            RefreshOU();
+            ClearGrid();
         }
-
-        private void comboBox1_SelectedIndexChanged(object sender, EventArgs e)
-        {
-            ReadPC();
-        }
-
-      
-        
     }
 }
