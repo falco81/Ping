@@ -5,8 +5,9 @@
     <ADServer>172.29.11.2</ADServer>
     <ADDomain>kr-olomoucky.int</ADDomain>
     <ADSearch>OU=PC and NB W10,DC=kr-olomoucky,DC=int</ADSearch>
-    <ADsso>true</ADsso>
-    <ADUser>aa</ADUser>
-    <ADPassword>aa</ADPassword>
+    <ADsso>False</ADsso>
+    <ADUser>
+    </ADUser>
+    <ADPassword>EAAAAN64Zb7K+4ykfmBxZWg2aqhoTwOtqf/tgOghDhJbjUpM</ADPassword>
   </configuration>
 </appSettings>

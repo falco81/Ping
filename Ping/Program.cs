@@ -10,10 +10,10 @@ namespace Pinger
     static class Program
     {
         // use console from another process
-        [System.Runtime.InteropServices.DllImport("kernel32.dll")]
-        static extern bool AttachConsole(int procId);
+        //[System.Runtime.InteropServices.DllImport("kernel32.dll")]
+        //static extern bool AttachConsole(int procId);
 
-        private const int ATTACH_PARENT_PROCESS = -1;
+        //private const int ATTACH_PARENT_PROCESS = -1;
 
         /// <summary>
         /// The main entry point for the application.
