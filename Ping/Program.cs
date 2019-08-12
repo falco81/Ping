@@ -22,11 +22,11 @@ namespace Pinger
         static void Main(string[] args)
         {
 
-            if (Array.Exists(args, s => s.Equals("-p")))
+            if (Array.Exists(args, s => s.Equals("-c")))
             {
                 Application.EnableVisualStyles();
                 Application.SetCompatibleTextRenderingDefault(false);
-                Application.Run(new Password());
+                Application.Run(new Config());
 
 /*              // redirect console output to parent process;
                 // must be before any calls to Console.WriteLine()
