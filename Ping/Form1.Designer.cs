@@ -194,6 +194,7 @@
             this.MinimumSize = new System.Drawing.Size(500, 450);
             this.Name = "Form1";
             this.Text = "Pinger";
+            this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.Form1_FormClosing);
             this.Load += new System.EventHandler(this.Form1_Load);
             ((System.ComponentModel.ISupportInitialize)(this.dataGridView1)).EndInit();
             this.tableLayoutPanel1.ResumeLayout(false);

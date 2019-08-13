@@ -603,6 +603,13 @@ namespace Pinger
 
         private void Form1_Load(object sender, EventArgs e)
         {
+            XmlDocument doc = new XmlDocument();
+            doc.Load("Config.xml");
+            Height = Convert.ToInt32(doc.SelectSingleNode("/appSettings/window/Height").InnerText);
+            Width = Convert.ToInt32(doc.SelectSingleNode("/appSettings/window/Width").InnerText);
+            Top = Convert.ToInt32(doc.SelectSingleNode("/appSettings/window/Top").InnerText);
+            Left = Convert.ToInt32(doc.SelectSingleNode("/appSettings/window/Left").InnerText);
+
             RefreshOU();
         }
 
@@ -651,6 +658,17 @@ namespace Pinger
         private void Button6_Click(object sender, EventArgs e)
         {
             ClearGrid();
+        }
+
+        private void Form1_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            XmlDocument doc = new XmlDocument();
+            doc.Load("Config.xml");
+            doc.SelectSingleNode("/appSettings/window/Height").InnerText = Convert.ToString(Height);
+            doc.SelectSingleNode("/appSettings/window/Width").InnerText = Convert.ToString(Width);
+            doc.SelectSingleNode("/appSettings/window/Top").InnerText = Convert.ToString(Top);
+            doc.SelectSingleNode("/appSettings/window/Left").InnerText = Convert.ToString(Left);
+            doc.Save("Config.xml");
         }
     }
 }

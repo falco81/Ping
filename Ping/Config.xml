@@ -1,5 +1,11 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <appSettings>
+  <window>
+    <Height>694</Height>
+    <Width>500</Width>
+    <Top>234</Top>
+    <Left>234</Left>
+  </window>
   <configuration>
     <DNSServer>172.29.11.2</DNSServer>
     <ADServer>172.29.11.2</ADServer>
