@@ -321,6 +321,8 @@ namespace Pinger
                         foreach (SearchResult resEnt in mySearcher.FindAll())
                         {
                             progressBar1.Value++;
+                            progressBar1.Refresh();
+                            ProgressBarText();
                             string PCName = resEnt.GetDirectoryEntry().Name;
 
 
@@ -396,6 +398,8 @@ namespace Pinger
                         foreach (SearchResult resEnt in mySearcher.FindAll())
                         {
                             progressBar1.Value++;
+                            progressBar1.Refresh();
+                            ProgressBarText();
                             string PCName = resEnt.GetDirectoryEntry().Name;
 
 
@@ -545,6 +549,8 @@ namespace Pinger
                 for (int n = 0; n < rowCount2 - 1; n++)
                 {
                     progressBar1.Value++;
+                    progressBar1.Refresh();
+                    ProgressBarText();
 
                     dataGridView1.Rows[n].Cells["IP"].Value = HostName2IP(dataGridView1.Rows[n].Cells["Inv. č."].Value + "." + ADDomain);
                     if (dataGridView1.Rows[n].Cells["IP"].Value.ToString() != "Neni v DNS")
@@ -629,6 +635,8 @@ namespace Pinger
             for (int n = 0; n < rowCount2 - 1; n++)
             {
                 progressBar1.Value++;
+                progressBar1.Refresh();
+                ProgressBarText();
 
                 dataGridView1.Rows[n].Cells["IP"].Value = HostName2IP(dataGridView1.Rows[n].Cells["Inv. č."].Value + "." + ADDomain);
                 if (dataGridView1.Rows[n].Cells["IP"].Value.ToString() != "Neni v DNS")
@@ -669,6 +677,26 @@ namespace Pinger
             doc.SelectSingleNode("/appSettings/window/Top").InnerText = Convert.ToString(Top);
             doc.SelectSingleNode("/appSettings/window/Left").InnerText = Convert.ToString(Left);
             doc.Save("Config.xml");
+        }
+
+        private void Form1_Paint(object sender, PaintEventArgs e)
+        {
+
+        }
+
+        private void ProgressBarText()
+        {
+            int percent = (int)(((double)(progressBar1.Value - progressBar1.Minimum) / (double)(progressBar1.Maximum - progressBar1.Minimum)) * 100);
+            using (Graphics gr = progressBar1.CreateGraphics())
+            {
+                gr.DrawString(percent.ToString() + "%",
+                    SystemFonts.DefaultFont,
+                    Brushes.Black,
+                    new PointF(progressBar1.Width / 2 - (gr.MeasureString(percent.ToString() + "%",
+                        SystemFonts.DefaultFont).Width / 2.0F),
+                    progressBar1.Height / 2 - (gr.MeasureString(percent.ToString() + "%",
+                        SystemFonts.DefaultFont).Height / 2.0F)));
+            }
         }
     }
 }
